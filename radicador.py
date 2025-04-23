@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import shutil
+import zipfile
 
 
 def verificar_ruta(ruta):
@@ -75,6 +76,35 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
         return False
 
 
+def comprimir_carpeta(ruta_carpeta, ruta_destino, numero_factura):
+    """Comprime la carpeta en un archivo ZIP con nombre FE{número_factura}.zip"""
+    zip_nombre = f"FE{numero_factura}.zip"
+    ruta_zip = os.path.join(ruta_destino, zip_nombre)
+    try:
+        with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, _, files in os.walk(ruta_carpeta):
+                for file in files:
+                    archivo_ruta = os.path.join(root, file)
+                    arcname = os.path.relpath(archivo_ruta, os.path.dirname(ruta_carpeta))
+                    zipf.write(archivo_ruta, arcname)
+        print(f"Archivo {zip_nombre} creado en {ruta_destino}")
+        return ruta_zip
+    except Exception as e:
+        print(f"Error al comprimir carpeta FE{numero_factura}: {e}")
+        return None
+
+
+def eliminar_carpeta(ruta_carpeta, numero_factura):
+    """Elimina la carpeta especificada"""
+    try:
+        shutil.rmtree(ruta_carpeta)
+        print(f"Carpeta FE{numero_factura} eliminada: {ruta_carpeta}")
+        return True
+    except Exception as e:
+        print(f"Error al eliminar carpeta FE{numero_factura}: {e}")
+        return False
+
+
 def main():
     """Función principal para procesar facturas y soportes"""
     # Solicitar rutas
@@ -120,7 +150,16 @@ def main():
             continue
 
         # Procesar y copiar contenido de factura
-        procesar_factura(ruta_facturas, factura, ruta_carpeta_copiada)
+        if not procesar_factura(ruta_facturas, factura, ruta_carpeta_copiada):
+            continue
+
+        # Comprimir la carpeta copiada
+        ruta_zip = comprimir_carpeta(ruta_carpeta_copiada, ruta_destino, factura)
+        if not ruta_zip:
+            continue
+
+        # Eliminar la carpeta copiada
+        eliminar_carpeta(ruta_carpeta_copiada, factura)
 
 
 if __name__ == '__main__':
