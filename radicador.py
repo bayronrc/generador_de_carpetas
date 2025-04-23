@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import shutil
 import zipfile
+import glob
 
 
 def verificar_ruta(ruta):
@@ -51,7 +52,7 @@ def copiar_carpeta_soporte(ruta_origen, ruta_destino, numero_factura):
 
 
 def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
-    """Agrega contenido de factura a la carpeta copiada"""
+    """Agrega contenido de factura a la carpeta copiada y renombra archivo ResultadosMSPS a .json en destino"""
     carpeta_factura = f"AttachedDocument_F-010-{numero_factura}"
     ruta_origen_factura = os.path.join(ruta_facturas, carpeta_factura)
 
@@ -60,6 +61,7 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
         return False
 
     try:
+        # Copiar todos los archivos y carpetas a la carpeta destino
         for item in os.listdir(ruta_origen_factura):
             ruta_item = os.path.join(ruta_origen_factura, item)
             destino_item = os.path.join(ruta_carpeta_destino, item)
@@ -70,6 +72,17 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
             elif os.path.isdir(ruta_item):
                 shutil.copytree(ruta_item, destino_item, dirs_exist_ok=True)
                 print(f"Carpeta {item} copiada a {destino_item}")
+
+        # Buscar archivo ResultadosMSPS_FE{número_factura}_*_A_CUV.txt en la carpeta destino
+        patron_resultados = os.path.join(ruta_carpeta_destino, f"ResultadosMSPS_FE{numero_factura}_*_A_CUV.txt")
+        archivos_resultados = glob.glob(patron_resultados)
+
+        # Renombrar archivo(s) encontrado(s) a .json en la carpeta destino
+        for archivo_txt in archivos_resultados:
+            archivo_json = os.path.splitext(archivo_txt)[0] + ".json"
+            os.rename(archivo_txt, archivo_json)
+            print(f"Renombrado {os.path.basename(archivo_txt)} a {os.path.basename(archivo_json)} en destino")
+
         return True
     except Exception as e:
         print(f"Error al procesar factura {numero_factura}: {e}")
@@ -77,7 +90,7 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
 
 
 def comprimir_carpeta(ruta_carpeta, ruta_destino, numero_factura):
-    """Comprime la carpeta en un archivo ZIP con nombre FE{número_factura}.zip"""
+    """Comprime los archivos de la carpeta en un archivo ZIP con nombre FE{número_factura}.zip sin subnivel de carpeta"""
     zip_nombre = f"FE{numero_factura}.zip"
     ruta_zip = os.path.join(ruta_destino, zip_nombre)
     try:
