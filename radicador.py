@@ -85,7 +85,7 @@ def comprimir_carpeta(ruta_carpeta, ruta_destino, numero_factura):
             for root, _, files in os.walk(ruta_carpeta):
                 for file in files:
                     archivo_ruta = os.path.join(root, file)
-                    arcname = os.path.relpath(archivo_ruta, os.path.dirname(ruta_carpeta))
+                    arcname = os.path.relpath(archivo_ruta, ruta_carpeta)
                     zipf.write(archivo_ruta, arcname)
         print(f"Archivo {zip_nombre} creado en {ruta_destino}")
         return ruta_zip
