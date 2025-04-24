@@ -94,7 +94,7 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
             except Exception as e:
                 print(f"Error al eliminar archivo {os.path.basename(archivo_rechazo)} de destino : {e}")
 
-        patron_rechazos_locales = os.path.join(ruta_carpeta_destino, f"ResultadosLocales_FE{numero_factura}")
+        patron_rechazos_locales = os.path.join(ruta_carpeta_destino, f"ResultadosLocales_FE{numero_factura}.txt")
         archivos_rechazos_locales = glob.glob(patron_rechazos_locales)
 
         for archivo_rechazo_local in archivos_rechazos_locales:
@@ -186,8 +186,6 @@ def main():
         # Procesar y copiar contenido de factura
         if not procesar_factura(ruta_facturas, factura, ruta_carpeta_copiada):
             continue
-
-        eliminar_archivo = os.path.join(ruta_carpeta_copiada, f"AttachedDocument_F-010-{factura}.xml")
 
         # Comprimir la carpeta copiada
         ruta_zip = comprimir_carpeta(ruta_carpeta_copiada, ruta_destino, factura)
