@@ -94,6 +94,16 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
             except Exception as e:
                 print(f"Error al eliminar archivo {os.path.basename(archivo_rechazo)} de destino : {e}")
 
+        patron_rechazos_locales = os.path.join(ruta_carpeta_destino, f"ResultadosLocales_FE{numero_factura}")
+        archivos_rechazos_locales = glob.glob(patron_rechazos_locales)
+
+        for archivo_rechazo_local in archivos_rechazos_locales:
+            try:
+                os.remove(archivo_rechazo_local)
+                print(f"Archivo {os.path.basename(archivo_rechazo_local)} eliminado de destino")
+            except Exception as e:
+                print(f"Error al eliminar {os.path.basename(archivo_rechazo_local)}: {e}")
+
         return True
     except Exception as e:
         print(f"Error al procesar factura {numero_factura}: {e}")
