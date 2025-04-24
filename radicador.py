@@ -77,11 +77,22 @@ def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
         patron_resultados = os.path.join(ruta_carpeta_destino, f"ResultadosMSPS_FE{numero_factura}_*_A_CUV.txt")
         archivos_resultados = glob.glob(patron_resultados)
 
+
         # Renombrar archivo(s) encontrado(s) a .json en la carpeta destino
         for archivo_txt in archivos_resultados:
             archivo_json = os.path.splitext(archivo_txt)[0] + ".json"
             os.rename(archivo_txt, archivo_json)
             print(f"Renombrado {os.path.basename(archivo_txt)} a {os.path.basename(archivo_json)} en destino")
+
+        patron_rechazo = os.path.join(ruta_carpeta_destino, f"ResultadosMSPS_FE{numero_factura}_ID0_R.txt")
+        archivos_rechazo = glob.glob(patron_rechazo)
+
+        for archivo_rechazo in archivos_rechazo:
+            try:
+                os.remove(archivo_rechazo)
+                print(f"Archivo {os.path.basename(archivo_rechazo)} eliminado de destino")
+            except Exception as e:
+                print(f"Error al eliminar archivo {os.path.basename(archivo_rechazo)} de destino : {e}")
 
         return True
     except Exception as e:
@@ -165,6 +176,8 @@ def main():
         # Procesar y copiar contenido de factura
         if not procesar_factura(ruta_facturas, factura, ruta_carpeta_copiada):
             continue
+
+        eliminar_archivo = os.path.join(ruta_carpeta_copiada, f"AttachedDocument_F-010-{factura}.xml")
 
         # Comprimir la carpeta copiada
         ruta_zip = comprimir_carpeta(ruta_carpeta_copiada, ruta_destino, factura)
