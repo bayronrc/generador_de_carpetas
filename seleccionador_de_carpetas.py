@@ -12,7 +12,7 @@ def copiar_carpetas(facturas, ruta_origen, ruta_destino):
 
     copiadas = []
     for factura in facturas:
-        nombre_carpeta = f"AttachedDocument_F-010-{factura:06d}"
+        nombre_carpeta = f"AttachedDocument_F-010-{factura}"
         origen = os.path.join(ruta_origen, nombre_carpeta)
         destino = os.path.join(ruta_destino, nombre_carpeta)
         if os.path.exists(origen):
@@ -39,6 +39,7 @@ def main():
     ruta_excel = input("📄 Ruta del archivo .xlsx con los números de factura: ").strip()
     ruta_arbol = input("📁 Ruta del árbol de carpetas de origen: ").strip()
     ruta_destino = input("📂 Ruta de destino para las carpetas copiadas: ").strip()
+    nombre_columna = input("📊 Nombre de la columna con los números de factura: ").strip()
 
     if not validar_ruta(ruta_excel):
         print("❌ La ruta del archivo Excel no existe.")
@@ -50,13 +51,19 @@ def main():
     # Leer facturas del Excel
     try:
         df = pd.read_excel(ruta_excel)
-        facturas = df.iloc[:, 0].dropna().astype(int).tolist()
+        facturas = df[nombre_columna].dropna().astype(int).tolist()
     except Exception as e:
         print(f"❌ Error al leer el archivo Excel: {e}")
         return
 
     # Copiar carpetas que coincidan
     carpetas_copiadas = copiar_carpetas(facturas, ruta_arbol, ruta_destino)
+
+    if not carpetas_copiadas:
+        print("⚠️ No se encontraron carpetas para copiar.")
+        return
+    # Comprimir carpetas copiadas
+    # comprimir_carpetas(ruta_destino)
 
 
 if __name__ == '__main__':

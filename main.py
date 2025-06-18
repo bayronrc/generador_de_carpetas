@@ -10,7 +10,7 @@ def crear_directorio(ruta):
     return ruta
 
 
-def copiar_archivo(origen, destino):
+def copiar_archivo(origen, destino)->bool:
     """Copia un archivo de una ruta origen a una ruta destino."""
     try:
         shutil.copy2(origen, destino)
@@ -98,7 +98,7 @@ def procesar_facturas(ruta_base, ruta_destino, ruta_json_origen):
 
 # Configuración de rutas
 # ruta_base = 'D:/007-Invoices/2025/MAR-2025'
-ruta_base = 'D:/007-Invoices/2025/FEB-2025'
+ruta_base = 'D:/007-Invoices/2025/ABR-2025'
 ruta_destino = 'D:/007-Invoices/2025-Directories'
 ruta_json_origen = 'D:/007-Invoices/json_files'
 
