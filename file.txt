@@ -1,0 +1,64 @@
+elif 'consultas' in sheet_name_lower:
+            df = pd.read_excel(xls, sheet_name, dtype=str).fillna('')
+
+            for consecutivo_str,grupo in df.groupby('consecutivoUsuario'):
+                consecutivo_usuario = int(consecutivo_str)
+
+                consultas_por_consecutivo.setdefault(consecutivo_usuario, [])
+                for idx, (_,fila) in enumerate(grupo.iterrows(),1):
+                    consulta = {
+                        'codPrestador': str(fila.get('codPrestador', '')),
+                        'fechaInicioAtencion': str(fila.get('fechaInicioAtencion', '')),
+                        'numAutorizacion': None if fila.get('numAutorizacion', '') == '' else str(fila.get('numAutorizacion')),
+                        'codConsulta': str(fila.get('codConsulta', '')),
+                        'modalidadGrupoServicioTecSal': str(fila.get('modalidadGrupoServicioTecSal', '')),
+                        'grupoServicios': str(fila.get('grupoServicios', '')),
+                        'codServicio': int(fila.get('codServicio', 0)) if str(fila.get('codServicio', '')).isdigit() else 0,
+                        'finalidadTecnologiaSalud': str(fila.get('finalidadTecnologiaSalud', '')),
+                        'causaMotivoAtencion': str(fila.get('causaMotivoAtencion', '')),
+                        'codDiagnosticoPrincipal': str(fila.get('codDiagnosticoPrincipal', '')),
+                        'codDiagnosticoRelacionado1': None if fila.get('codDiagnosticoRelacionado1', '') == '' else str(fila.get('codDiagnosticoRelacionado1')),
+                        'codDiagnosticoRelacionado2': None if fila.get('codDiagnosticoRelacionado2', '') == '' else str(fila.get('codDiagnosticoRelacionado2')),
+                        'codDiagnosticoRelacionado3': None if fila.get('codDiagnosticoRelacionado3', '') == '' else str(fila.get('codDiagnosticoRelacionado3')),
+                        'tipoDiagnosticoPrincipal': str(fila.get('tipoDiagnosticoPrincipal', '')),
+                        'tipoDocumentoIdentificacion': str(fila.get('tipoDocumentoIdentificacion', '')),
+                        'numDocumentoIdentificacion': str(fila.get('numDocumentoIdentificacion', '')),
+                        'vrServicio': int(fila.get('vrServicio', 0)) if str(fila.get('vrServicio', '')).replace('.', '').isdigit() else 0,
+                        'conceptoRecaudo': str(fila.get('conceptoRecaudo', '')),
+                        'valorPagoModerador': int(fila.get('valorPagoModerador', 0)) if str(fila.get('valorPagoModerador', '')).replace('.', '').isdigit() else 0,
+                        'numFEVPagoModerador': str(fila.get('numFEVPagoModerador', '')),
+                        'consecutivo': idx
+                    }
+                    consultas_por_consecutivo.setdefault(consecutivo_usuario, []).append(consulta)
+
+        elif 'procedimientos' in sheet_name_lower:
+            df = pd.read_excel(xls, sheet_name, dtype=str).fillna('')
+
+            for consecutivo_str,grupo in df.groupby('consecutivoUsuario'):
+                consecutivo_usuario = int(consecutivo_str)
+                procedimientos_por_consecutivo.setdefault(consecutivo_usuario, [])
+
+                for idx, (_, fila) in enumerate(grupo.iterrows(), 1):
+                    procedimiento = {
+                        'codPrestador': str(fila.get('codPrestador', '')),
+                        'fechaInicioAtencion': str(fila.get('fechaInicioAtencion', '')),
+                        'idMIPRES': None if fila.get('idMIPRES', '') == '' else str(fila.get('idMIPRES')),
+                        'numAutorizacion': None if fila.get('numAutorizacion', '') == '' else str(fila.get('numAutorizacion')),
+                        'codProcedimiento': str(fila.get('codProcedimiento', '')),
+                        'viaIngresoServicioSalud': str(fila.get('viaIngresoServicioSalud', '')),
+                        'modalidadGrupoServicioTecSal': str(fila.get('modalidadGrupoServicioTecSal', '')),
+                        'grupoServicios': str(fila.get('grupoServicios', '')),
+                        'codServicio': int(fila.get('codServicio', 0)) if str(fila.get('codServicio', '')).isdigit() else 0,
+                        'finalidadTecnologiaSalud': str(fila.get('finalidadTecnologiaSalud', '')),
+                        'tipoDocumentoIdentificacion': str(fila.get('tipoDocumentoIdentificacion', '')),
+                        'numDocumentoIdentificacion': str(fila.get('numDocumentoIdentificacion', '')),
+                        'codDiagnosticoPrincipal': str(fila.get('codDiagnosticoPrincipal', '')),
+                        'codDiagnosticoRelacionado': None if fila.get('codDiagnosticoRelacionado', '') == '' else str(fila.get('codDiagnosticoRelacionado')),
+                        'codComplicacion': None if fila.get('codComplicacion', '') == '' else str(fila.get('codComplicacion')),
+                        'vrServicio': int(fila.get('vrServicio', 0)) if str(fila.get('vrServicio', '')).replace('.', '').isdigit() else 0,
+                        'conceptoRecaudo': str(fila.get('conceptoRecaudo', '')),
+                        'valorPagoModerador': int(fila.get('valorPagoModerador', 0)) if str(fila.get('valorPagoModerador', '')).replace('.', '').isdigit() else 0,
+                        'numFEVPagoModerador': str(fila.get('numFEVPagoModerador', '')),
+                        'consecutivo': idx
+                    }
+                    procedimientos_por_consecutivo.setdefault(consecutivo_usuario, []).append(procedimiento)
