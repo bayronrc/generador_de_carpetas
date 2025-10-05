@@ -98,7 +98,7 @@ def procesar_facturas(ruta_base, ruta_destino, ruta_json_origen):
 
 # Configuración de rutas
 # ruta_base = 'D:/007-Invoices/2025/MAR-2025'
-ruta_base = 'D:/007-Invoices/2025/ABR-2025'
+ruta_base = 'D:/007-Invoices/2025/SEPT-2025'
 ruta_destino = 'D:/007-Invoices/2025-Directories'
 ruta_json_origen = 'D:/007-Invoices/json_files'
 

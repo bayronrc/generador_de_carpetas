@@ -1,231 +1,163 @@
-import pandas as pd
+# 1. verificar rutas
 import os
+from typing import List
+import pandas as pd
+from tqdm import tqdm
 import shutil
-import zipfile
-import glob
+import json
 
 
-def verificar_ruta(ruta):
-    """Verifica si la ruta existe"""
-    return os.path.exists(ruta)
+def validar_ruta(path)->bool:
+    """
+    Verifica si la ruta existe
+    """
+    return os.path.exists(path)
 
+def crear_directorio(path)->None:
+    """
+    Crea el directorio si no existe
+    """
+    if not validar_ruta(path):
+        print(f"📦 Creando directorio: {path}")
+        os.makedirs(path)
 
-def crear_directorio(ruta):
-    """Crea un directorio si no existe"""
-    if not os.path.exists(ruta):
-        print(f" 📦 Creando directorio: {ruta}")
-        os.makedirs(ruta)
+def validar_directorio(path)-> bool:
+     return os.path.isdir(path)
+     
+        
+def procesar_archivo_xlsx(ruta_a_xlsx, columna)->List:
+    """_summary_
 
-
-def procesar_archivo_xlsx(ruta_xlsx, columna):
-    """Procesa el archivo .xlsx y devuelve lista de números de factura"""
+    Args:
+        path_to_xlsx (string): ruta a el archivo xlsx
+        column_excel (string): columna en el archivo xlsx
+    """
     try:
-        df = pd.read_excel(ruta_xlsx)
+        df = pd.read_excel(ruta_a_xlsx)
         if columna not in df.columns:
             print(f"❌ La columna {columna} no se encuentra en el archivo .xlsx.")
             return []
-        return [str(numero) for numero in df[columna].dropna().astype(str)]
+        return [str(factura) for factura in df[columna].dropna().astype(str)]
     except Exception as e:
-        print(f"❌ Error al leer el archivo .xlsx: {e}")
+        print(f" ❌ Error al leer el archivo .xlsx: {e}")
         return []
 
+def procesar_soportes(factura, ruta_soportes) -> str :
+    ruta_carpeta = os.path.join(ruta_soportes, f"FE{factura}")
+    if not ruta_carpeta:
+        print(f"📁 ❌ Carpeta FE{factura} no encontrada en {ruta_soportes}")
+    return ruta_carpeta
+        
+def copiar_contenido_carpeta_soporte(carpeta_soportes: str, ruta_destino: str, factura: str)-> str:
+    """Copia el contenido de la carpeta origen de soportes de cada factura al el destino
 
-def validar_factura_soporte(numero_factura, ruta_soportes, ruta_destino):
-    """Valida si existe carpeta con número de factura en soportes y registra facturas no encontradas en un Excel"""
-    ruta_carpeta = os.path.join(ruta_soportes, f"FE{numero_factura}")
-    if os.path.isdir(ruta_carpeta):
-        return ruta_carpeta
-    print(f"📁 ❌ Carpeta FE{numero_factura} no encontrada en {ruta_soportes}")
-    excel_path = os.path.join(ruta_destino, "facturas_no_encontradas.xlsx")
+    Args:
+        carpeta_soportes (str): Ruta Origen de los soportes
+        ruta_destino (str): Ruta destino de los soportes
+        factura (str): factura procesada
+
+    Returns:
+        str: ruta de la carpeta creada destino
+    """
+    destino = os.path.join(ruta_destino, f"FE{factura}")
     try:
-        # Si el archivo Excel ya existe, leerlo y añadir la nueva factura
-        if os.path.exists(excel_path):
-            df = pd.read_excel(excel_path)
-            new_row = pd.DataFrame({"Factura": [numero_factura]})
-            df = pd.concat([df, new_row], ignore_index=True)
-        else:
-            # Si no existe, crear un nuevo DataFrame
-            df = pd.DataFrame({"Factura": [numero_factura]})
-        # Guardar el DataFrame en el Excel
-        df.to_excel(excel_path, index=False, engine='openpyxl')
-        print(f"✅ Factura {numero_factura} añadida a {excel_path}")
-    except Exception as e:
-        print(f"⚠️ Error al escribir en {excel_path}: {e}")
-    return None
-
-
-def copiar_carpeta_soporte(ruta_origen, ruta_destino, numero_factura):
-    """Copia la carpeta de soporte a la ruta destino"""
-    destino_carpeta = os.path.join(ruta_destino, f"FE{numero_factura}")
-    try:
-        shutil.copytree(ruta_origen, destino_carpeta, dirs_exist_ok=True)
-        print(f"✅ Carpeta FE{numero_factura} copiada a {destino_carpeta}")
-        return destino_carpeta
-    except Exception as e:
-        print(f"❌ Error al copiar carpeta FE{numero_factura}: {e}")
-        excel_path = os.path.join(ruta_destino, "facturas_no_encontradas.xlsx")
-        try:
-            # Si el archivo Excel ya existe, leerlo y añadir la nueva factura
-            if os.path.exists(excel_path):
-                df = pd.read_excel(excel_path)
-                new_row = pd.DataFrame({"Factura": [numero_factura]})
-                df = pd.concat([df, new_row], ignore_index=True)
-            else:
-                # Si no existe, crear un nuevo DataFrame
-                df = pd.DataFrame({"Factura": [numero_factura]})
-            # Guardar el DataFrame en el Excel
-            df.to_excel(excel_path, index=False)
-            print(f"❌ Factura {numero_factura} añadida a {excel_path}")
-        except Exception as e:
-            print(f"❌ Error al escribir en {excel_path}: {e}")
-        return None
-
-
-def procesar_factura(ruta_facturas, numero_factura, ruta_carpeta_destino):
-    """Agrega contenido de factura a la carpeta copiada, renombra archivo ResultadosMSPS a .json en destino y elimina archivos no deseados"""
-    carpeta_factura = f"AttachedDocument_F-010-{numero_factura}"
+        return shutil.copytree(carpeta_soportes,destino,dirs_exist_ok=True)
+    except shutil.Error as e:
+        print(f"Error : {e}")
+    
+def procesar_factura(ruta_facturas:str, factura:str, ruta_facturas_destino:str)->bool:
+    carpeta_factura = f"AttachedDocument_F-010-{factura}"
     ruta_origen_factura = os.path.join(ruta_facturas, carpeta_factura)
-
-    if not os.path.exists(ruta_origen_factura):
-        print(f"⚠️ Carpeta de factura {carpeta_factura} no encontrada")
-        return False
-
+    ruta_destino_factura = os.path.join(ruta_facturas_destino,f"FE{factura}")
+    
+    
+    if not os.path.exists(ruta_destino_factura):
+        print(f"Ruta : {ruta_destino_factura} no existe se creara la carpeta en el destino")
+        crear_directorio(ruta_destino_factura)
+    
     try:
-        # Copiar todos los archivos y carpetas a la carpeta destino
-        for item in os.listdir(ruta_origen_factura):
-            ruta_item = os.path.join(ruta_origen_factura, item)
-            destino_item = os.path.join(ruta_carpeta_destino, item)
-
-            if os.path.isfile(ruta_item):
-                shutil.copy2(ruta_item, destino_item)
-                print(f"✅ Archivo {item} copiado a {destino_item}")
-            elif os.path.isdir(ruta_item):
-                shutil.copytree(ruta_item, destino_item, dirs_exist_ok=True)
-                print(f"✅ Carpeta {item} copiada a {destino_item}")
-
-        # Buscar archivo ResultadosMSPS_FE{número_factura}_*_A_CUV.txt en la carpeta destino
-        patron_resultados = os.path.join(ruta_carpeta_destino, f"ResultadosMSPS_FE{numero_factura}_*_A_CUV.txt")
-        archivos_resultados = glob.glob(patron_resultados)
-
-        # Renombrar archivo(s) encontrado(s) a .json en la carpeta destino
-        for archivo_txt in archivos_resultados:
-            archivo_json = os.path.splitext(archivo_txt)[0] + ".json"
-            os.rename(archivo_txt, archivo_json)
-            print(f"⚠️ Renombrado {os.path.basename(archivo_txt)} a {os.path.basename(archivo_json)} en destino")
-
-        # Buscar y eliminar archivo ResultadosMSPS_FE{número_factura}_ID0_R.txt en la carpeta destino
-        patron_rechazo = os.path.join(ruta_carpeta_destino, f"ResultadosMSPS_FE{numero_factura}_ID0_R.txt")
-        archivos_rechazo = glob.glob(patron_rechazo)
-
-        for archivo_rechazo in archivos_rechazo:
-            try:
-                os.remove(archivo_rechazo)
-                print(f"⚠️ Archivo {os.path.basename(archivo_rechazo)} eliminado de destino")
-            except Exception as e:
-                print(f"⚠️ Error al eliminar {os.path.basename(archivo_rechazo)}: {e}")
-
-        # Buscar y eliminar archivo ResultadosLocales_FE{número_factura}.txt en la carpeta destino
-        patron_locales = os.path.join(ruta_carpeta_destino, f"ResultadosLocales_FE{numero_factura}.txt")
-        archivos_locales = glob.glob(patron_locales)
-
-        for archivo_locales in archivos_locales:
-            try:
-                os.remove(archivo_locales)
-                print(f"⚠️ Archivo {os.path.basename(archivo_locales)} eliminado de destino")
-            except Exception as e:
-                print(f"⚠️ Error al eliminar {os.path.basename(archivo_locales)}: {e}")
-
-        return True
+        return shutil.copytree(ruta_origen_factura,ruta_destino_factura, dirs_exist_ok=True)
     except Exception as e:
-        print(f"Error al procesar factura {numero_factura}: {e}")
-        return False
+        print(f"Error: {e} ")
 
+    
 
-def comprimir_carpeta(ruta_carpeta, ruta_destino, numero_factura):
-    """Comprime los archivos de la carpeta en un archivo ZIP con nombre FE{número_factura}.zip sin subnivel de carpeta"""
-    zip_nombre = f"FE{numero_factura}.zip"
-    ruta_zip = os.path.join(ruta_destino, zip_nombre)
-    try:
-        with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for root, _, files in os.walk(ruta_carpeta):
-                for file in files:
-                    archivo_ruta = os.path.join(root, file)
-                    arcname = os.path.relpath(archivo_ruta, ruta_carpeta)
-                    zipf.write(archivo_ruta, arcname)
-        print(f"✅ Archivo {zip_nombre} creado en {ruta_destino}")
-        return ruta_zip
-    except Exception as e:
-        print(f"❌ Error al comprimir carpeta FE{numero_factura}: {e}")
-        return None
-
-
-def eliminar_carpeta(ruta_carpeta, numero_factura):
-    """Elimina la carpeta especificada"""
-    try:
-        shutil.rmtree(ruta_carpeta)
-        print(f"✅ Carpeta FE{numero_factura} eliminada: {ruta_carpeta}")
-        return True
-    except Exception as e:
-        print(f"Error al eliminar carpeta FE{numero_factura}: {e}")
-        return False
+    
 
 
 def main():
-    """Función principal para procesar facturas y soportes"""
-    # Solicitar rutas
-    ruta_xlsx = input("📄 Ingrese la ruta del archivo .xlsx: ")
-    columna = input("📄 Ingrese el nombre de la columna con números de facturas: ")
+    """
+    Funcion principal para procesar facturas y soportes
+    """
+    ruta_a_xlsx = input("📄 Ingrese la Ruta del Archivo Excel (xlsx) ::")
+    columna_excel = input("📄 Ingrese el nombre de la columna con los numeros de facturas a radicar: ")
     ruta_destino = input("📁 Ingrese la ruta de destino: ")
-    ruta_facturas = input("📂 Ingrese la ruta de las facturas: ")
-    ruta_soportes = input("📦 Ingrese la ruta de los soportes: ")
+    ruta_soportes = input(" Ingrese la ruta de los soportes 📦 :")
+    ruta_facturas = input("Ingrese la ruta de las facturas 🗄️ :") 
+    
+    ruta_soportes_destino = f"{ruta_destino}\\Soportes"
+    ruta_facturas_destino = f"{ruta_destino}\\Facturas"
 
-    # Validar rutas
-    for ruta, nombre in [(ruta_xlsx, "archivo .xlsx"),
-                         (ruta_facturas, "facturas"),
-                         (ruta_soportes, "soportes")]:
-        if not verificar_ruta(ruta):
-            print(f"⚠️ Verifique la ruta de {nombre} y vuelva a intentarlo.")
-            return
-
-    # Crear directorio destino
+    for ruta, _ in [
+                    (ruta_a_xlsx,'archivo .xlsx'),
+                    (ruta_soportes_destino,'destino soportes'),
+                    (ruta_facturas_destino,'destino facturas')
+                    ]:
+        
+        if not validar_ruta(ruta):
+            crear_directorio(ruta)
+    
     crear_directorio(ruta_destino)
-
-    # Procesar archivo xlsx
-    facturas = procesar_archivo_xlsx(ruta_xlsx, columna)
+    
+    facturas = procesar_archivo_xlsx(ruta_a_xlsx,columna_excel)
+    
     if not facturas:
-        print("❌ No se encontraron números de factura en el archivo .xlsx")
+        print(f"❌ No se encontraron números de factura en el archivo .xlsx")
         return
-
-    print(f"Facturas encontradas: {facturas}")
-
-    # Procesar cada factura
+    
+    print(f"📊 Total de facturas a procesar: {len(facturas)}")
+    print("⏳ Iniciando procesamiento...\n")
+    
+    # pbar = tqdm(
+    #     total=len(facturas),
+    #     desc="Procesando facturas",
+    #     bar_format='{l_bar}{bar:40}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]',
+    #     ncols=100
+    # )
+    
+    facturas_fallidas = 0
+    facturas_exitosas = 0
     for factura in facturas:
-        # Validar existencia de carpeta en soportes
-        ruta_carpeta_soporte = validar_factura_soporte(factura, ruta_soportes, ruta_destino)
-        if not ruta_carpeta_soporte:
-            continue
-
-        # Copiar carpeta de soporte
-        ruta_carpeta_copiada = copiar_carpeta_soporte(
-            ruta_carpeta_soporte,
-            ruta_destino,
-            factura
-        )
-        if not ruta_carpeta_copiada:
-            continue
-
-        # Procesar y copiar contenido de factura
-        if not procesar_factura(ruta_facturas, factura, ruta_carpeta_copiada):
-            continue
-
-        # Comprimir la carpeta copiada
-        ruta_zip = comprimir_carpeta(ruta_carpeta_copiada, ruta_destino, factura)
-        if not ruta_zip:
-            continue
-
-        # Eliminar la carpeta copiada
-        eliminar_carpeta(ruta_carpeta_copiada, factura)
-
+        
+        # pbar.set_description(f"Processing FE{factura}")
+        
+        try:
+            #validar existencia de la carpeta en soportes
+            carpeta_soporte = procesar_soportes(factura,ruta_soportes)
+            if not carpeta_soporte:
+                facturas_fallidas += 1
+                # pbar.update(1)
+                continue
+            
+            if not copiar_contenido_carpeta_soporte(carpeta_soporte, ruta_soportes_destino, factura):
+                facturas_fallidas += 1
+                #pbar.update(1)
+                continue
+            
+            process = procesar_factura(ruta_facturas, factura,ruta_facturas_destino)
+                
+            print(process)
+            
+            
+            
+        except Exception as e:
+            print(f"❌ Error inesperado procesando factura {factura}: {e}")
+            facturas_fallidas += 1
+        
+        # finally:
+            # pbar.update(1)
+            
+    # pbar.close()
 
 if __name__ == '__main__':
     main()
